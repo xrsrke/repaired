@@ -1,7 +1,7 @@
 REPAIRED - 🚧 WORK IN PROGRESS 🚧
 ---------
 
-![image.png(repaired.png)
+![image.png](repaired.png)
 
 
 Paper: [Replay-Guided Adversarial Environment Design (REPAIRED)](https://arxiv.org/abs/2110.02439)

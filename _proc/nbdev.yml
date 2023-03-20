@@ -1,9 +1,0 @@
-project:
-  output-dir: _docs
-
-website:
-  title: "repaired"
-  site-url: "https://xrsrke.github.io/repaired"
-  description: "Implementation of Replay-Guided Adversarial Environment Design (REPAIRED)"
-  repo-branch: main
-  repo-url: "https://github.com/xrsrke/repaired"

@@ -1,0 +1,23 @@
+[
+  {
+    "objectID": "index.html",
+    "href": "index.html",
+    "title": "repaired",
+    "section": "",
+    "text": "image.png\n\n\nPaper: Replay-Guided Adversarial Environment Design (REPAIRED)\nI’m currently working towards this paper. Check out my learning progress here: https://twitter.com/xariusrke/status/1630503779220226053"
+  },
+  {
+    "objectID": "level.html",
+    "href": "level.html",
+    "title": "Training Levels",
+    "section": "",
+    "text": "source\n\nBaseLevel\n\n BaseLevel (id:str)\n\nInitialize self. See help(type(self)) for accurate signature.\n\nsource\n\n\nLevel\n\n Level (id:str)\n\nInitialize self. See help(type(self)) for accurate signature."
+  },
+  {
+    "objectID": "replay.html",
+    "href": "replay.html",
+    "title": "Prioritized Experience Replay",
+    "section": "",
+    "text": "Prioritized Level Replay\n\nsource\n\n\nPrioritizedReplayDistribution\n\n PrioritizedReplayDistribution (staleness_coeff:float=0.1,\n                                temperature:float=0.1)\n\nInitialize self. See help(type(self)) for accurate signature.\n\n\n\n\n\n\n\n\n\n\nType\nDefault\nDetails\n\n\n\n\nstaleness_coeff\nfloat\n0.1\n\n\n\ntemperature\nfloat\n0.1\nthe beta coefficient for the P_S distribution\n\n\nReturns\nNone\n\n\n\n\n\n\nsource\n\n\nPrioritizedReplay\n\n PrioritizedReplay (levels:List[repaired.level.Level])\n\nInitialize self. See help(type(self)) for accurate signature."
+  }
+]

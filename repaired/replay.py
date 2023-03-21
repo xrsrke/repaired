@@ -4,12 +4,15 @@
 __all__ = ['PrioritizedReplayDistribution', 'PrioritizedReplay']
 
 # %% ../nbs/replay.ipynb 4
+from typing import List, Dict, Union
+
 import torch
 from torch import nn
 import torch.nn.functional as F
 from torch.distributions import Bernoulli, Uniform
-
 from torchtyping import TensorType
+
+from .level import Level
 
 # %% ../nbs/replay.ipynb 6
 class PrioritizedReplayDistribution:
@@ -23,19 +26,22 @@ class PrioritizedReplayDistribution:
     
     def create(
         self,
-        score_levels: TensorType["n_visited_levels"],
-        last_count_levels: TensorType["n_visited_levels"], # the last episode that each level was played,
-        last_episode: TensorType[1] # the last episode 
+        score_levels: Dict[Level, Union[int, float]],
+        last_episode_levels: Dict[Level, int], # the last episode that each level was played,
+        last_episode: int # the last episode 
     ) -> TensorType["n_visited_levels"]:
         """Create a prioritized level distribution."""
+        
+        score_levels = torch.tensor([v for v in score_levels.values()])
+        last_episode_levels = torch.tensor([v for v in last_episode_levels.values()])
         
         level_scores = torch.pow(
             input=F.normalize(score_levels, dim=-1),
             exponent=1/self.temperature
         )
-        score_dist = level_scores / level_scores.sum(dim=-1)[:, None]
+        score_dist = level_scores / level_scores.sum(dim=-1)
         
-        stale_scores = last_episode - last_count_levels
+        stale_scores = last_episode - last_episode_levels
         stale_dist = stale_scores / stale_scores.sum(dim=-1)
         
         prioritized_dist = (1 - self.staleness_coeff) * score_dist + self.staleness_coeff * stale_dist
@@ -46,51 +52,47 @@ class PrioritizedReplayDistribution:
 class PrioritizedReplay:
     def __init__(
         self,
-        levels: TensorType["n_levels"],
-        policy: nn.Module,
+        levels: List[Level],
     ) -> None:
         self.levels = levels
-        # self.visited_levels = torch.zeros_like(levels)
-        self.visited_count_levels = torch.zeros_like(self.levels)
-        self.last_count_levels = torch.zeros_like(self.levels)
-        self.score_levels = torch.zeros_like(levels)
+        self.visited_levels: List[Level] = []
+        self.visited_count_levels: Dict[Level, int] = {}
+        self.last_count_levels: Dict[Level, int] = {}
+        self.score_levels: Dict[Level, Union[int, float]] = {}
         self.last_episode = 0
         
-        self.policy = policy
         self.prioritized_dist = PrioritizedReplayDistribution()
     
     def sample_next_level(
         self,
-        visited_levels: TensorType["batch_size", "n_visited_levels"],
-        score_levels: TensorType["batch_size", "n_visited_levels"],
-        last_count_levels: TensorType["batch_size", "n_visited_levels"],
-        last_episode: TensorType[1]
-    ) -> TensorType[1]:
+        visited_levels: List[Level],
+        score_levels: Dict[str, Union[int, float]],
+        last_episode_levels: Dict[str, int],
+        last_episode: int
+    ) -> Level:
         """Sampling a level from the replay distribution."""
         # sample replay decision
-        dist = Bernoulli(probs=0.5)
+        decision_dist = Bernoulli(probs=0.5)
         
-        # TODO: support batch
-        mask = ~torch.isin(self.levels, visited_levels)
-        unseen_levels = self.levels[mask]
-    
-        if dist.sample() == 0 and len(unseen_levels) > 0:            
+        # write unseen level by filter level_id
+        unseen_levels = [level for level in self.levels if level not in visited_levels]
+
+        if decision_dist.sample() == 0 and  len(unseen_levels) > 0:            
             # sample an unseen level
             uniform_dist = torch.rand(len(unseen_levels))
             selected_index = torch.argmax(uniform_dist)
             next_level = unseen_levels[selected_index]
             
-            idx_selected_unseen_level = torch.where(self.levels == next_level)[0][0]
-            self.visited_count_levels[idx_selected_unseen_level] = 1
+            self.visited_count_levels[next_level] = 1
         else:
             # sample a level for replay
             prioritized_dist = self.prioritized_dist.create(
                 score_levels,
-                last_count_levels,
+                last_episode_levels,
                 last_episode
             )
             
             visited_idx = torch.multinomial(prioritized_dist, num_samples=1)
-            next_level = visited_levels[visited_idx][0] # return the first batch
+            next_level = visited_levels[visited_idx]
             
         return next_level
